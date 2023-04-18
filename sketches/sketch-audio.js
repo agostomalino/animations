@@ -1,4 +1,5 @@
 const canvasSketch = require('canvas-sketch');
+const math = require('canvas-sketch-util/math');
 
 const settings = {
   dimensions: [ 1080, 1080 ],
@@ -10,22 +11,7 @@ let audioContext, audioData, sourceNode, analyserNode;
 let manager;
 
 const sketch = () => {
-
-  // ////////////descomentar para dibujar corazon//////////////
-
-  // const heartPath = new Path2D();
-  // const centerX = settings.dimensions[0] / 2;
-  // const centerY = settings.dimensions[1] / 2;
-  // let heartSize = Math.min(centerX, centerY) * 0.8;
-  
-  // heartPath.moveTo(centerX, centerY);
-  // heartPath.bezierCurveTo(centerX + heartSize/2, centerY - heartSize/2, centerX + heartSize/2, centerY + heartSize/4, centerX, centerY + heartSize/2);
-  // heartPath.bezierCurveTo(centerX - heartSize/2, centerY + heartSize/4, centerX - heartSize/2, centerY - heartSize/2, centerX, centerY);
-
-  // heartPath.closePath();
-
-
-  // //////////////////////////
+  const bins =[4, 12 , 37];
   
   return ({ context, width, height }) => {
     context.fillStyle = 'white';
@@ -35,31 +21,22 @@ const sketch = () => {
 
     analyserNode.getFloatFrequencyData(audioData);
 
-    const avg = getAverage(audioData);
-
-    /////////////descomentar para dibujar corazon//////////////
-    // heartSize = Math.min(centerX, centerY) * 0.8 + avg;
-    
-    // context.save();
-    // context.translate(width * 0.5, height * 0.5);
-    // context.fillStyle = 'red';
-    // context.scale(heartSize / Math.min(centerX, centerY), heartSize / Math.min(centerX, centerY));
-    // context.fill(heartPath);
-    // context.restore();
-    ////////////////////////////
-
-    context.save();
-    context.translate(width * 0.5, height * 0.5);
-    context.lineWidth = 10;
-
-    context.beginPath();
-    context.arc(0, 0, Math.abs(avg), 0, Math.PI * 2);
-    context.stroke();
-
-    context.restore();
-
-
-
+    for(let i = 0; i < bins.length; i++){
+      
+          const bin = bins[i]
+          const mapped = math.mapRange(audioData[bin], analyserNode.minDecibels, analyserNode.maxDecibels, 0, 1, true);
+          const radius = mapped * 300;
+          
+          context.save();
+          context.translate(width * 0.5, height * 0.5);
+          context.lineWidth = 10;
+      
+          context.beginPath();
+          context.arc(0, 0, radius, 0, Math.PI * 2);
+          context.stroke();
+      
+          context.restore();
+    }
 
   };
 };
@@ -89,6 +66,8 @@ const createAudio = () => {
   sourceNode.connect(audioContext.destination);
 
   analyserNode = audioContext.createAnalyser();
+  analyserNode.fftSize = 512; // este valor siempre tiene que ser una potencia de 2
+  analyserNode.smoothingTimeConstant = 0.9;
   sourceNode.connect(analyserNode);
 
   audioData = new Float32Array(analyserNode.frequencyBinCount)
