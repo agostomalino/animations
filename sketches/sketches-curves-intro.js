@@ -34,7 +34,7 @@ const sketch = ({canvas}) => {
     };
     
     context.stroke();
-    ///////
+    // /////
 
     // context.beginPath();
     // context.moveTo(points[0].x, points[0].y);
